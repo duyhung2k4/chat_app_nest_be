@@ -3,12 +3,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.connectRedis = exports.connectPg = exports.clientRedis = exports.clientPg = void 0;
 const pg_1 = require("pg");
 const redis_1 = require("redis");
+console.log({
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: Number(process.env.DB_PORT),
+    host: process.env.DB_HOST,
+});
 exports.clientPg = new pg_1.Client({
-    user: "postgres",
-    password: "123456",
-    database: "chat_app",
-    port: 5432,
-    host: "192.168.1.5",
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: Number(process.env.DB_PORT),
+    host: process.env.DB_HOST,
 });
 exports.clientRedis = (0, redis_1.createClient)();
 const connectPg = async () => {

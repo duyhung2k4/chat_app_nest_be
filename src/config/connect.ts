@@ -1,12 +1,20 @@
 import { Client } from "pg";
 import { createClient } from "redis";
 
+console.log({
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: Number(process.env.DB_PORT),
+    host: process.env.DB_HOST,
+})
+
 export const clientPg = new Client({
-    user: "postgres",
-    password: "123456",
-    database: "chat_app",
-    port: 5432,
-    host: "192.168.1.5",
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: Number(process.env.DB_PORT),
+    host: process.env.DB_HOST,
 });
 
 export const clientRedis = createClient();
@@ -23,7 +31,6 @@ export const connectPg = async () => {
 export const connectRedis = async () => {
     try {
         await clientRedis.connect();
-        // clientRedis.set("profileIds", )
     } catch (error) {
         console.log(error);
     }
