@@ -23,6 +23,7 @@ export const connectPg = async () => {
 export const connectRedis = async () => {
     try {
         await clientRedis.connect();
+        // clientRedis.set("profileIds", )
     } catch (error) {
         console.log(error);
     }

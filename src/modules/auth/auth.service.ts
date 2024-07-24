@@ -28,6 +28,66 @@ export class AuthService {
         this.authUtils = new AuthUtils();
     }
 
+    async GetProfile(profileId: number): Promise<ProfileModel | Error> {
+        try {
+            const columnProfile = COLUMN_TABLE.profiles.map(c => `p.${c} as p__${c}`);
+            const columnUser = COLUMN_TABLE.user.map(c => `u.${c} as u__${c}`);
+            const columnRole = COLUMN_TABLE.roles.map(c => `r.${c} as r__${c}`);
+
+            const queryConfig: QueryConfig = {
+                text: `
+                    SELECT
+                        ${columnProfile.join(",")},
+                        ${columnUser.join(",")},
+                        ${columnRole.join(",")}
+                    FROM profiles as p
+                    JOIN users as u ON u.id = p.user_id
+                    JOIN roles as r ON r.id = u.role_id
+                    WHERE p.id = $1
+                `,
+                values: [profileId]
+            }
+
+            const result = await this.clientPg.query<Record<string, any>>(queryConfig);
+
+            if(result.rowCount === 0) {
+                throw new Error("data null");
+            }
+            
+
+            let dataMap: Record<string, any> = {
+                user: {
+                    role: {},
+                },
+            };
+            const data = result.rows[0];
+            Object.keys(data).forEach(key => {
+                const field = key.split("__")[1];
+                if (!field) return;
+                switch (key.split("__")[0]) {
+                    case "p":
+                        dataMap[field] = data[key];
+                        break;
+                    case "u":
+                        dataMap.user[field] = data[key];
+                        break;
+                    case "r":
+                        dataMap.user.role[field] = data[key];
+                        break;
+                    default:
+                        break;
+                }
+            });
+
+            const profile = dataMap as ProfileModel;
+            delete profile?.user.password;
+
+            return profile;
+        } catch (error) {
+            return error;
+        }
+    }
+
     async GetInfoSetToken(profileId: number): Promise<GetInfoSetTokenResponse | Error> {
         try {
             const queryConfig: QueryConfig = {
@@ -56,7 +116,7 @@ export class AuthService {
         }
     }
 
-    async CheckUser(email: string): Promise<UserModel | Error> {
+    async CheckUser(email: string): Promise<UserModel | null | Error> {
         try {
             const queryConfig: QueryConfig = {
                 text: `SELECT * FROM ${TABLE.USER} WHERE email = $1`,
@@ -66,7 +126,7 @@ export class AuthService {
             const result = await this.clientPg.query<UserModel>(queryConfig);
 
             if(result.rows.length === 0) {
-                throw new Error("data null");
+                return null;
             }
 
             return result.rows[0];
