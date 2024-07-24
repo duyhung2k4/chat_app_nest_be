@@ -12,7 +12,7 @@ class JwtUtils {
 
     CreateToken(payload: TokenInfoPayload, type: TokenType): string {
         const token: string = jwt.sign(payload, this.privateKey, {
-            expiresIn: 60 * (type === "access_token" ? 1 : 3),
+            expiresIn: 60 * 60 * (type === "access_token" ? 1 : 3),
             algorithm: "RS256",
         });
 
