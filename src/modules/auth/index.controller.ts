@@ -6,23 +6,24 @@ import { Controller, Get, Post, Req, Res } from "@nestjs/common";
 import { RegisterRequest } from "@/dto/request/auth";
 import { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
-import { HandleResponse } from "@/utils/http";
 import { AuthInterface } from './index.interface';
+import { JwtService } from '@/shared/jwt/index.service';
+import { HttpService } from '@/shared/http/index.service';
 
 
 @Controller("account/api/v1")
 export class AuthController implements AuthInterface {
     constructor(
         private readonly authService: AuthService,
-        private readonly jwtUtils: JwtUtils,
-        private readonly handleResponse: HandleResponse
+        private readonly jwtService: JwtService,
+        private readonly httpService: HttpService,
     ) {
 
     }
 
     @Get("public/auth/ping")
     async Ping(@Req() req: Request, @Res() res: Response) {
-        this.handleResponse.SuccessResponse(res, {
+        this.httpService.SuccessResponse(res, {
             mess: "OK",
         })
     }
@@ -42,9 +43,9 @@ export class AuthController implements AuthInterface {
 
             const resultSetRedisUserPending = await this.authService.CreatePendingUser(data);
 
-            this.handleResponse.SuccessResponse(res, resultSetRedisUserPending);
+            this.httpService.SuccessResponse(res, resultSetRedisUserPending);
         } catch (error) {
-            this.handleResponse.ErrorResponse(res, error);
+            this.httpService.ErrorResponse(res, error);
         }
     }
 
@@ -57,7 +58,7 @@ export class AuthController implements AuthInterface {
                 throw new Error(`not token`);
             }
 
-            const result = await this.jwtUtils.VerifyToken(token);
+            const result = await this.jwtService.VerifyToken(token);
 
             if (result instanceof Error) {
                 throw new Error(`error token: ${result}`);
@@ -68,12 +69,12 @@ export class AuthController implements AuthInterface {
                 throw new Error(`info error: ${infoSetToken}`);
             }
 
-            const accessToken = this.jwtUtils.CreateToken({
+            const accessToken = this.jwtService.CreateToken({
                 ...infoSetToken,
                 uuid: uuidv4().toString(),
             }, "access_token");
 
-            const refreshToken = this.jwtUtils.CreateToken({
+            const refreshToken = this.jwtService.CreateToken({
                 ...infoSetToken,
                 uuid: uuidv4().toString(),
             }, "refresh_token");
@@ -83,13 +84,13 @@ export class AuthController implements AuthInterface {
                 throw new Error("profile not found");
             }
 
-            this.handleResponse.SuccessResponse(res, {
+            this.httpService.SuccessResponse(res, {
                 accessToken,
                 refreshToken,
                 profile,
             });
         } catch (error) {
-            this.handleResponse.ErrorResponse(res, error);
+            this.httpService.ErrorResponse(res, error);
         }
     }
 
@@ -102,9 +103,9 @@ export class AuthController implements AuthInterface {
                 throw new Error(`get time code error: ${data}`);
             }
 
-            this.handleResponse.SuccessResponse(res, { dataTime: dayjs(data.ex).toDate() });
+            this.httpService.SuccessResponse(res, { dataTime: dayjs(data.ex).toDate() });
         } catch (error) {
-            this.handleResponse.ErrorResponse(res, error);
+            this.httpService.ErrorResponse(res, error);
         }
     }
 
@@ -123,9 +124,9 @@ export class AuthController implements AuthInterface {
                 throw new Error(`profile error ${resultProfile}`);
             }
 
-            this.handleResponse.SuccessResponse(res, resultProfile);
+            this.httpService.SuccessResponse(res, resultProfile);
         } catch (error) {
-            this.handleResponse.ErrorResponse(res, error);
+            this.httpService.ErrorResponse(res, error);
         }
     }
 
@@ -143,27 +144,27 @@ export class AuthController implements AuthInterface {
                 throw new Error("profile null");
             }
 
-            const accessToken = this.jwtUtils.CreateToken({
+            const accessToken = this.jwtService.CreateToken({
                 profile_id: profile.id,
                 role_id: profile?.user?.role.id,
                 email: profile.email,
                 uuid: uuidv4().toString(),
             }, "access_token");
 
-            const refreshToken = this.jwtUtils.CreateToken({
+            const refreshToken = this.jwtService.CreateToken({
                 profile_id: profile.id,
                 role_id: profile?.user?.role.id,
                 email: profile.email,
                 uuid: uuidv4().toString(),
             }, "refresh_token");
 
-            this.handleResponse.SuccessResponse(res, {
+            this.httpService.SuccessResponse(res, {
                 accessToken,
                 refreshToken,
                 profile,
             });
         } catch (error) {
-            this.handleResponse.ErrorResponse(res, error);
+            this.httpService.ErrorResponse(res, error);
         }
     }
 
@@ -183,9 +184,9 @@ export class AuthController implements AuthInterface {
                 throw new Error(`create user pending error: ${createUserPending}`);
             }
 
-            this.handleResponse.SuccessResponse(res, null);
+            this.httpService.SuccessResponse(res, null);
         } catch (error) {
-            this.handleResponse.ErrorResponse(res, error);
+            this.httpService.ErrorResponse(res, error);
         }
     }
 }

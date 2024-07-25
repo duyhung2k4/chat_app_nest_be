@@ -1,5 +1,5 @@
 import * as dayjs from "dayjs";
-import AuthUtils from "@/utils/auth";
+import SMTPTransport from "nodemailer/lib/smtp-transport";
 
 import { TABLE } from "@/constants/query";
 import { COLUMN_TABLE } from "@/constants/table";
@@ -12,7 +12,7 @@ import { PgService } from "@/shared/pg/index.service";
 import { RedisClientType } from "redis";
 import { SmtpService } from "@/shared/smtp/index.service";
 import { Transporter } from "nodemailer";
-import SMTPTransport from "nodemailer/lib/smtp-transport";
+import { BcryptService } from "@/shared/bcrypt/index.service";
 
 
 
@@ -21,16 +21,15 @@ export class AuthService {
     private readonly clientPg: Client;
     private readonly clientRedis: RedisClientType;
     private readonly clientEmail: Transporter<SMTPTransport.SentMessageInfo>;;
-    private readonly authUtils: AuthUtils;
     
     constructor(
         private readonly pgService: PgService,
         private readonly smtpService: SmtpService,
+        private readonly bcryptService: BcryptService,
     ) {
         this.clientPg = this.pgService.GetClientPg();
         this.clientRedis = this.pgService.GetClientRedis();
         this.clientEmail = this.smtpService.GetEmailTransporter();
-        this.authUtils = new AuthUtils();
     }
 
     async GetProfile(profileId: number): Promise<ProfileModel | Error> {
@@ -181,7 +180,7 @@ export class AuthService {
 
             if (!data || data?.code !== code) return null;
 
-            const passwordHash = this.authUtils.HashPassword(data.data.password);
+            const passwordHash = this.bcryptService.HashPassword(data.data.password);
             return passwordHash;
         } catch (error) {
             return error;
@@ -287,7 +286,7 @@ export class AuthService {
 
             const profile = dataMap as ProfileModel;
 
-            const ok = await this.authUtils.ComparePassword(infoLogin.password, profile?.user.password);
+            const ok = await this.bcryptService.ComparePassword(infoLogin.password, profile?.user.password);
             if (!ok) {
                 throw new Error("password wrong");
             };

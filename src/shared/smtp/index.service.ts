@@ -1,9 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { createTransport, Transporter } from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
+import { SmtpInterface } from "./index.interface";
 
 @Injectable()
-export class SmtpService {
+export class SmtpService implements SmtpInterface {
     private emailTransporter: Transporter<SMTPTransport.SentMessageInfo>;
 
     constructor() {
