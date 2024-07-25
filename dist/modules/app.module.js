@@ -8,8 +8,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
-const auth_module_1 = require("./auth/auth.module");
+const index_module_1 = require("./auth/index.module");
 const morgan_middleware_1 = require("../middlewares/morgan.middleware");
+const index_module_2 = require("./web_socket/index.module");
 let AppModule = class AppModule {
     configure(consumer) {
         consumer.apply(morgan_middleware_1.MorganMiddleware).forRoutes("*");
@@ -19,7 +20,8 @@ exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            auth_module_1.AuthModule
+            index_module_1.AuthModule,
+            index_module_2.WebSocketModule,
         ],
     })
 ], AppModule);

@@ -1,8 +1,6 @@
 import * as dayjs from "dayjs";
 import AuthUtils from "@/utils/auth";
 
-import { clientPg, clientRedis, RedisClient } from "@/config/connect";
-import { emailTransporter, EmailTransporter } from "@/config/email";
 import { TABLE } from "@/constants/query";
 import { COLUMN_TABLE } from "@/constants/table";
 import { RegisterRequest } from "@/dto/request/auth";
@@ -10,21 +8,28 @@ import { ProfileModel } from "@/models/profile";
 import { UserModel } from "@/models/user";
 import { Injectable } from "@nestjs/common";
 import { Client, QueryConfig } from "pg";
+import { PgService } from "@/shared/pg/index.service";
+import { RedisClientType } from "redis";
+import { SmtpService } from "@/shared/smtp/index.service";
+import { Transporter } from "nodemailer";
+import SMTPTransport from "nodemailer/lib/smtp-transport";
 
 
 
 @Injectable()
 export class AuthService {
     private readonly clientPg: Client;
-    private readonly clientRedis: RedisClient;
-    private readonly clientEmail: EmailTransporter;
+    private readonly clientRedis: RedisClientType;
+    private readonly clientEmail: Transporter<SMTPTransport.SentMessageInfo>;;
     private readonly authUtils: AuthUtils;
     
     constructor(
+        private readonly pgService: PgService,
+        private readonly smtpService: SmtpService,
     ) {
-        this.clientPg = clientPg;
-        this.clientRedis = clientRedis;
-        this.clientEmail = emailTransporter;
+        this.clientPg = this.pgService.GetClientPg();
+        this.clientRedis = this.pgService.GetClientRedis();
+        this.clientEmail = this.smtpService.GetEmailTransporter();
         this.authUtils = new AuthUtils();
     }
 

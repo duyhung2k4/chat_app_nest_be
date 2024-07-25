@@ -18,7 +18,7 @@ let JwtUtils = class JwtUtils {
     }
     CreateToken(payload, type) {
         const token = jwt.sign(payload, this.privateKey, {
-            expiresIn: 60 * 60 * (type === "access_token" ? 1 : 3),
+            expiresIn: 24 * 60 * 60 * (type === "access_token" ? 1 : 3),
             algorithm: "RS256",
         });
         return token;

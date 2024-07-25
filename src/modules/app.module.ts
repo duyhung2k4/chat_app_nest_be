@@ -1,11 +1,12 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { AuthModule } from './auth/auth.module';
+import { AuthModule } from './auth/index.module';
 import { MorganMiddleware } from '@/middlewares/morgan.middleware';
-import { ConfigModule } from "@nestjs/config";
+import { WebSocketModule } from './web_socket/index.module';
 
 @Module({
     imports: [
-        AuthModule
+        AuthModule,
+        WebSocketModule,
     ],
 })
 export class AppModule implements NestModule {

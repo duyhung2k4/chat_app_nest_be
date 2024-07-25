@@ -1,10 +1,6 @@
 import { Injectable, NestMiddleware } from "@nestjs/common";
 import { Request, Response } from "express";
 import * as morgan from "morgan";
-import * as fs from 'fs';
-import * as path from 'path';
-
-const logStream = fs.createWriteStream(path.join(__dirname, 'access.log'), { flags: 'a' });
 
 @Injectable()
 export class MorganMiddleware implements NestMiddleware {

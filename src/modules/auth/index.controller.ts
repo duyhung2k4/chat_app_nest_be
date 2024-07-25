@@ -1,16 +1,17 @@
 import * as dayjs from 'dayjs'
 import JwtUtils from "@/utils/jwt";
 
-import { AuthService } from "@/modules/auth/auth.service";
+import { AuthService } from "@/modules/auth/index.service";
 import { Controller, Get, Post, Req, Res } from "@nestjs/common";
 import { RegisterRequest } from "@/dto/request/auth";
 import { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { HandleResponse } from "@/utils/http";
+import { AuthInterface } from './index.interface';
 
 
 @Controller("account/api/v1")
-export class AuthController {
+export class AuthController implements AuthInterface {
     constructor(
         private readonly authService: AuthService,
         private readonly jwtUtils: JwtUtils,
@@ -52,18 +53,18 @@ export class AuthController {
         try {
             const token = req.headers?.authorization.split(" ")?.[1];
 
-            if(!token) {
+            if (!token) {
                 throw new Error(`not token`);
             }
 
             const result = await this.jwtUtils.VerifyToken(token);
 
-            if(result instanceof Error) {
+            if (result instanceof Error) {
                 throw new Error(`error token: ${result}`);
             }
 
             const infoSetToken = await this.authService.GetInfoSetToken(result.profile_id);
-            if(infoSetToken instanceof Error) {
+            if (infoSetToken instanceof Error) {
                 throw new Error(`info error: ${infoSetToken}`);
             }
 
@@ -78,7 +79,7 @@ export class AuthController {
             }, "refresh_token");
 
             const profile = await this.authService.GetProfile(infoSetToken.profile_id);
-            if(profile instanceof Error) {
+            if (profile instanceof Error) {
                 throw new Error("profile not found");
             }
 
@@ -138,7 +139,7 @@ export class AuthController {
                 throw new Error(`profile error: ${profile}`);
             }
 
-            if(profile === null) {
+            if (profile === null) {
                 throw new Error("profile null");
             }
 

@@ -9,9 +9,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MorganMiddleware = void 0;
 const common_1 = require("@nestjs/common");
 const morgan = require("morgan");
-const fs = require("fs");
-const path = require("path");
-const logStream = fs.createWriteStream(path.join(__dirname, 'access.log'), { flags: 'a' });
 let MorganMiddleware = class MorganMiddleware {
     use(req, res, next) {
         morgan("dev")(req, res, next);

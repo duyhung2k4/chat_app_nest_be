@@ -1,12 +1,15 @@
 import JwtUtils from "@/utils/jwt";
 
-import { AuthService } from "@/modules/auth/auth.service";
+import { AuthService } from "@/modules/auth/index.service";
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from "@nestjs/common";
-import { AuthController } from "./auth.controller";
+import { AuthController } from "./index.controller";
 import { HandleResponse } from "@/utils/http";
-import { AuthMiddleware } from "./auth.middleware";
+import { AuthMiddleware } from "./index.middleware";
+import { PgModule } from "@/shared/pg/index.module";
+import { SmtpModule } from "@/shared/smtp/index.module";
 
 @Module({
+    imports: [PgModule, SmtpModule],
     controllers: [AuthController],
     providers: [AuthService, JwtUtils, HandleResponse],
 })
