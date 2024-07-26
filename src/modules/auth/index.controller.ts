@@ -1,5 +1,4 @@
 import * as dayjs from 'dayjs'
-import JwtUtils from "@/utils/jwt";
 
 import { AuthService } from "@/modules/auth/index.service";
 import { Controller, Get, Post, Req, Res } from "@nestjs/common";

@@ -3,6 +3,9 @@ import { IncomingMessage } from "http";
 import { WebSocket, WebSocketServer } from "ws";
 import { v4 as uuidv4 } from "uuid";
 import { WebSocketInterface } from "./index.interface";
+import { RabbitMQService } from "@/shared/rabbitmq/index.service";
+import { Channel } from "amqplib/callback_api";
+import { QUEUE } from "@/constants/queue";
 
 @Controller()
 export class WebSocketController implements WebSocketInterface {
@@ -10,12 +13,21 @@ export class WebSocketController implements WebSocketInterface {
     private mapWs: Map<string, WebSocket>;
     private userClientWsCount: Map<string, number>;
 
-    constructor() {
+    private chanelRabbitMQ: Channel;
+
+    constructor(
+        private readonly rabbitMQService: RabbitMQService
+    ) {
         this.wss = new WebSocketServer({ port: 8080 });
         this.mapWs = new Map();
         this.userClientWsCount = new Map();
 
+        this.getServicePromise();
         this.HandleConnect();
+    }
+
+    private async getServicePromise() {
+        this.chanelRabbitMQ = await this.rabbitMQService.GetChanel();
     }
 
     HandleConnect() {
@@ -96,6 +108,7 @@ export class WebSocketController implements WebSocketInterface {
 
     OnMess(ws: WebSocket) {
         ws.on("message", (data) => {
+            this.chanelRabbitMQ.sendToQueue(QUEUE.mess, Buffer.from(data.toString()))
             this.SendAllServer(data.toString());
         })
     }

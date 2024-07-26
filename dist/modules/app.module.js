@@ -11,6 +11,9 @@ const common_1 = require("@nestjs/common");
 const index_module_1 = require("./auth/index.module");
 const morgan_middleware_1 = require("../middlewares/morgan.middleware");
 const index_module_2 = require("./web_socket/index.module");
+const index_module_3 = require("../shared/pg/index.module");
+const index_module_4 = require("../shared/mongodb/index.module");
+const index_module_5 = require("../shared/rabbitmq/index.module");
 let AppModule = class AppModule {
     configure(consumer) {
         consumer.apply(morgan_middleware_1.MorganMiddleware).forRoutes("*");
@@ -22,6 +25,9 @@ exports.AppModule = AppModule = __decorate([
         imports: [
             index_module_1.AuthModule,
             index_module_2.WebSocketModule,
+            index_module_3.PgModule,
+            index_module_4.MongodbModule,
+            index_module_5.RabbitMQModule,
         ],
     })
 ], AppModule);

@@ -10,3 +10,5 @@ test_get_data:
 	http://localhost:10000/account/api/v1/public/auth/ping
 pm2:
 	pm2 start --name chat_app_server --watch -i max dist/main.js
+rabbitmq:
+	docker start rabbitmq
