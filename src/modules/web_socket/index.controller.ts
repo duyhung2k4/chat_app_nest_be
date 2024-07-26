@@ -115,13 +115,6 @@ export class WebSocketController implements WebSocketInterface {
             this.chanelRabbitMQ.sendToQueue(QUEUE.mess, Buffer.from(JSON.stringify(mess)), {
                 persistent: true,
             })
-            this.SendAllServer(data.toString());
         })
-    }
-
-    SendAllServer(data: string) {
-        this.mapWs.forEach((ws, _) => {
-            ws.send(data);
-        });
     }
 }

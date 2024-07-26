@@ -10,7 +10,6 @@ export interface WebSocketInterface {
 
     // Handle message
     OnMess(ws: WebSocket): void
-    SendAllServer(data: string): void
     
     // Handle Error
     HandleError(ws: WebSocket): void

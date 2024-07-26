@@ -46,6 +46,9 @@ model profiles {
     user_id Int @unique
     user users @relation(fields: [user_id], references: [id])
 
+    from_box_chats box_chats[] @relation("from_profile")
+    to_box_chats box_chats[] @relation("to_profile")
+
     created_at DateTime @default(now())
     updated_at DateTime? @updatedAt
     deleted_at DateTime?
@@ -54,12 +57,15 @@ model profiles {
 model box_chats {
     id Int @id @default(autoincrement())
 
-    profile_id1 Int
-    profile_id2 Int
+    from_id Int
+    to_id Int
+    
+    from_profile profiles @relation("from_profile",fields: [from_id], references: [id])
+    to_profile profiles @relation("to_profile",fields: [to_id], references: [id])
 
     created_at DateTime @default(now())
     updated_at DateTime? @updatedAt
     deleted_at DateTime?
 
-    @@unique([profile_id1, profile_id2])
+    @@unique([from_id, to_id])
 }
