@@ -6,13 +6,13 @@ import { WebSocketInterface } from "./index.interface";
 import { RabbitMQService } from "@/shared/rabbitmq/index.service";
 import { Channel } from "amqplib/callback_api";
 import { QUEUE } from "@/constants/queue";
+import { FIELD_SOCKET } from "@/constants/websocket";
 
 @Controller()
 export class WebSocketController implements WebSocketInterface {
     private wss: WebSocketServer;
     private mapWs: Map<string, WebSocket>;
     private userClientWsCount: Map<string, number>;
-
     private chanelRabbitMQ: Channel;
 
     constructor(
@@ -65,7 +65,8 @@ export class WebSocketController implements WebSocketInterface {
                 profileId = mapParams["id"];
                 const uuid = uuidv4();
                 key_ws = `${uuid}_${profileId}`;
-
+                
+                ws[FIELD_SOCKET.id] = profileId;
                 this.mapWs.set(key_ws, ws);
                 this.SetCountUserClient(profileId, "up");
             }
@@ -108,7 +109,12 @@ export class WebSocketController implements WebSocketInterface {
 
     OnMess(ws: WebSocket) {
         ws.on("message", (data) => {
-            this.chanelRabbitMQ.sendToQueue(QUEUE.mess, Buffer.from(data.toString()))
+            const mess = JSON.parse(data.toString());
+            mess[FIELD_SOCKET.id] = Number(ws[FIELD_SOCKET.id]);
+
+            this.chanelRabbitMQ.sendToQueue(QUEUE.mess, Buffer.from(JSON.stringify(mess)), {
+                persistent: true,
+            })
             this.SendAllServer(data.toString());
         })
     }

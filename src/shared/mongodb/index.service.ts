@@ -7,9 +7,10 @@ import { COLLECTION } from "@/constants/collection";
 export class MongodbService implements MongodbInterface {
     private client: MongoClient;
     private database: Db;
+    private initialized: Promise<void>;
 
     constructor() {
-        this.connect();
+        this.initialized = this.connect();
     }
 
     private async connect() {
@@ -40,7 +41,8 @@ export class MongodbService implements MongodbInterface {
         }
     }
 
-    GetDatabase(): Db {
+    async GetDatabase(): Promise<Db> {
+        await this.initialized;
         return this.database;
     }
 }

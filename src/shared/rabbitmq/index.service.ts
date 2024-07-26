@@ -1,37 +1,39 @@
 import { Injectable } from "@nestjs/common";
 import { RabbitMQInterface } from "./index.inteface";
-import { Connection, connect as connectRabbitMQ, Channel, Replies } from "amqplib/callback_api";
-import { QUEUE, QUEUE_TYPE } from "@/constants/queue";
+import { Connection, connect as connectRabbitMQ, Channel, Replies, Message } from "amqplib/callback_api";
+import { QUEUE } from "@/constants/queue";
+import { MongodbService } from "../mongodb/index.service";
+import { Db } from "mongodb";
 
 @Injectable()
 export class RabbitMQService implements RabbitMQInterface {
     private connection: Connection;
     private chanel: Channel;
     private queue: Replies.AssertQueue[];
-    private initialized: Promise<ResultInit>;
+    private initialized: Promise<void>;
+    private mongodb: Db;
 
-    constructor() {
+    constructor(
+        private readonly mongodbService: MongodbService
+    ) {
         this.initialized = this.init();
     }
-
-    private async init(): Promise<ResultInit> {
+    
+    private async init(): Promise<void> {
         try {
-            const connection = await this.createConnect();
-            const chanel = await this.createChanel();
-            const queue = await this.assertQueue();
+            await this.createConnect();
+            await this.createChanel();
+            await this.assertQueue();
 
-            return {
-                connection,
-                chanel,
-                queue,
-            };
+            this.mongodb = await this.mongodbService.GetDatabase();
+            
+            this.consumerMess();
         } catch (error) {
             console.log(error);
-            throw error;
         }
     }
 
-    private async createConnect(): Promise<Connection> {
+    private async createConnect(): Promise<void> {
         try {
             const promise = new Promise<Connection>((resolve, reject) => {
                 connectRabbitMQ(process.env.URL_RABBIT_MQ, (err, connection) => {
@@ -44,16 +46,13 @@ export class RabbitMQService implements RabbitMQInterface {
                 });
             });
 
-            const result = await promise;
-            this.connection = result;
-            return result;
+            this.connection = await promise;
         } catch (error) {
             console.log("rabbitmq connect: ", error);
-            throw error;
         }
     }
 
-    private async createChanel(): Promise<Channel> {
+    private async createChanel(): Promise<void> {
         try {
             const promise = new Promise<Channel>((resolve, reject) => {
                 this.connection.createChannel((err, chanel) => {
@@ -66,16 +65,13 @@ export class RabbitMQService implements RabbitMQInterface {
                 });
             });
 
-            const result = await promise;
-            this.chanel = result;
-            return result;
+            this.chanel = await promise;
         } catch (error) {
             console.log("create channel: ", error);
-            throw error;
         }
     }
 
-    private async assertQueue(): Promise<Replies.AssertQueue[]> {
+    private async assertQueue(): Promise<void> {
         try {
             const listPromise = Object.keys(QUEUE).map(key => {
                 const promise = new Promise<Replies.AssertQueue>((resolve, reject) => {
@@ -94,23 +90,26 @@ export class RabbitMQService implements RabbitMQInterface {
                 return promise;
             });
 
-            const result = await Promise.all(listPromise);
-            this.queue = result;
-            return result;
+            this.queue = await Promise.all(listPromise);
         } catch (error) {
             console.log(error);
-            throw error;
         }
+    }
+
+    private consumerMess() {
+        this.chanel.consume(QUEUE.mess, async (msg: Message) => {
+            try {
+                const document = JSON.parse(msg.content.toString());
+                await this.mongodb.collection(QUEUE.mess).insertOne(document, {});
+                this.chanel.ack(msg);
+            } catch (error) {
+                console.log(error);
+            }
+        })
     }
 
     async GetChanel(): Promise<Channel> {
         await this.initialized;
         return this.chanel;
     }
-}
-
-type ResultInit = {
-    connection: Connection;
-    chanel: Channel;
-    queue: Replies.AssertQueue[];
 }
