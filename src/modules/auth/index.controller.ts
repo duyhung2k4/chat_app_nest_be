@@ -5,13 +5,13 @@ import { Controller, Get, Post, Req, Res } from "@nestjs/common";
 import { RegisterRequest } from "@/dto/request/auth";
 import { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
-import { AuthInterface } from './index.interface';
+import { AuthControllerInterface } from './index.interface';
 import { JwtService } from '@/shared/jwt/index.service';
 import { HttpService } from '@/shared/http/index.service';
 
 
 @Controller("account/api/v1")
-export class AuthController implements AuthInterface {
+export class AuthController implements AuthControllerInterface {
     constructor(
         private readonly authService: AuthService,
         private readonly jwtService: JwtService,

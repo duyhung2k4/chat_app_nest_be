@@ -13,23 +13,34 @@ import { RedisClientType } from "redis";
 import { SmtpService } from "@/shared/smtp/index.service";
 import { Transporter } from "nodemailer";
 import { BcryptService } from "@/shared/bcrypt/index.service";
+import { RedisService } from "@/shared/redis/index.service";
 
 
 
 @Injectable()
 export class AuthService {
-    private readonly clientPg: Client;
-    private readonly clientRedis: RedisClientType;
-    private readonly clientEmail: Transporter<SMTPTransport.SentMessageInfo>;;
+    private initialized: Promise<void>;
+    private clientPg: Client;
+    private clientRedis: RedisClientType;
+    private clientEmail: Transporter<SMTPTransport.SentMessageInfo>;
     
     constructor(
         private readonly pgService: PgService,
+        private readonly redisService: RedisService,
         private readonly smtpService: SmtpService,
         private readonly bcryptService: BcryptService,
     ) {
-        this.clientPg = this.pgService.GetClientPg();
-        this.clientRedis = this.pgService.GetClientRedis();
-        this.clientEmail = this.smtpService.GetEmailTransporter();
+        this.initialized = this.init();
+    }
+    
+    private async init() {
+        try {
+            this.clientEmail = this.smtpService.GetEmailTransporter();
+            this.clientRedis = await this.redisService.GetClientRedis();
+            this.clientPg = await this.pgService.GetClientPg();
+        } catch (error) {
+            return error;
+        }
     }
 
     async GetProfile(profileId: number): Promise<ProfileModel | Error> {

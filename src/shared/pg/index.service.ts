@@ -1,13 +1,11 @@
 import { Injectable } from "@nestjs/common";
-import { createClient } from "@redis/client";
 import { Client } from "pg";
-import { RedisClientType } from "redis";
 import { PgInterface } from "./index.interface";
 
 @Injectable()
 export class PgService implements PgInterface {
+    private initialized: Promise<void>
     private clientPg: Client;
-    private clientRedis: RedisClientType;
 
     constructor() {
         this.clientPg = new Client({
@@ -17,25 +15,20 @@ export class PgService implements PgInterface {
             port: Number(process.env.DB_PORT),
             host: process.env.DB_HOST,
         });
-        this.clientRedis = createClient();
 
-        this.connect();
+        this.initialized = this.connect();
     }
 
     private async connect(): Promise<void> {
         try {
             await this.clientPg.connect();
-            await this.clientRedis.connect();
         } catch (error) {
             console.log(error);
         }
     }
 
-    GetClientPg(): Client {
+    async GetClientPg(): Promise<Client> {
+        await this.initialized;
         return this.clientPg;
-    }
-
-    GetClientRedis(): RedisClientType {
-        return this.clientRedis;
     }
 }

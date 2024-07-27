@@ -108,6 +108,11 @@ export class RabbitMQService implements RabbitMQInterface {
         })
     }
 
+    async GetQueue(): Promise<Replies.AssertQueue[]> {
+        await this.initialized;
+        return this.queue;
+    }
+
     async GetChanel(): Promise<Channel> {
         await this.initialized;
         return this.chanel;

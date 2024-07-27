@@ -6,7 +6,7 @@ export interface WebSocketInterface {
     HandleConnect(): void
     SetIdClient(ws: WebSocket, req: IncomingMessage): string | null
     HandleDisconnect(ws: WebSocket, key_ws: string): void
-    SetCountUserClient(profileId: string, type: "up" | "down"): void
+    SetCountUserClient(profileId: string, type: "up" | "down", ws: WebSocket): void
 
     // Handle message
     OnMess(ws: WebSocket): void

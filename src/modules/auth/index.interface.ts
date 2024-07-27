@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 
-export interface AuthInterface {
+export interface AuthControllerInterface {
     Ping(req: Request, res: Response): void
     Register(req: Request, res: Response): void
     RefreshToken(req: Request, res: Response): void

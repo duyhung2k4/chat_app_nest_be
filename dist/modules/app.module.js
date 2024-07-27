@@ -14,6 +14,8 @@ const index_module_2 = require("./web_socket/index.module");
 const index_module_3 = require("../shared/pg/index.module");
 const index_module_4 = require("../shared/mongodb/index.module");
 const index_module_5 = require("../shared/rabbitmq/index.module");
+const index_module_6 = require("./search/index.module");
+const index_module_7 = require("./mess/index.module");
 let AppModule = class AppModule {
     configure(consumer) {
         consumer.apply(morgan_middleware_1.MorganMiddleware).forRoutes("*");
@@ -23,11 +25,13 @@ exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            index_module_1.AuthModule,
-            index_module_2.WebSocketModule,
             index_module_3.PgModule,
             index_module_4.MongodbModule,
             index_module_5.RabbitMQModule,
+            index_module_1.AuthModule,
+            index_module_6.SearchModule,
+            index_module_2.WebSocketModule,
+            index_module_7.MessModule,
         ],
     })
 ], AppModule);
