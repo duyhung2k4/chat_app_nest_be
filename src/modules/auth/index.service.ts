@@ -14,11 +14,12 @@ import { SmtpService } from "@/shared/smtp/index.service";
 import { Transporter } from "nodemailer";
 import { BcryptService } from "@/shared/bcrypt/index.service";
 import { RedisService } from "@/shared/redis/index.service";
+import { AuthServiceInterface } from "./index.interface";
 
 
 
 @Injectable()
-export class AuthService {
+export class AuthService implements AuthServiceInterface {
     private initialized: Promise<void>;
     private clientPg: Client;
     private clientRedis: RedisClientType;

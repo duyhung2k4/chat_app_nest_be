@@ -140,6 +140,7 @@ export class WebSocketController implements WebSocketInterface {
                 const insertMess: MessModel = {
                     ...mess,
                     from_id: Number(ws[FIELD_SOCKET.id]),
+                    uuid: uuidv4().toString(),
                     created_at: dayjs().toDate(),
                     updated_at: null,
                     deleted_at: null,

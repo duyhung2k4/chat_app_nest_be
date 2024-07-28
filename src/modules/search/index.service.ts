@@ -2,9 +2,10 @@ import { ProfileModel } from "@/models/profile";
 import { PgService } from "@/shared/pg/index.service";
 import { Injectable } from "@nestjs/common";
 import { Client, QueryConfig } from "pg";
+import { SearchServiceInterface } from "./index.interface";
 
 @Injectable()
-export class SearchService {
+export class SearchService implements SearchServiceInterface {
     private initialized: Promise<void>;
     private pgClient: Client;
 

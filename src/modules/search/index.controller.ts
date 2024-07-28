@@ -2,9 +2,10 @@ import { Controller, Get, Req, Res } from "@nestjs/common";
 import { Request, Response } from "express";
 import { SearchService } from "./index.service";
 import { HttpService } from "@/shared/http/index.service";
+import { SearchControllerInterface } from "./index.interface";
 
 @Controller("search/api/v1")
-export class SearchController {
+export class SearchController implements SearchControllerInterface {
 
     constructor(
         private readonly searchService: SearchService,

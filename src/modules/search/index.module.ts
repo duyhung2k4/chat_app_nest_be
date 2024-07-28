@@ -15,6 +15,6 @@ export class SearchModule implements NestModule {
     public configure(consumer: MiddlewareConsumer) {
         consumer
             .apply(AuthMiddleware)
-            .forRoutes("*")
+            .forRoutes("search/api/v1/protected/*")
     }
 };
