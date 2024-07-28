@@ -20,7 +20,19 @@ export class JwtService implements JwtInterface {
         return token;
     }
 
-    async VerifyToken(token: string): Promise<TokenInfoResult | Error> {
+    MapCookie(cookie: string): Record<string, string> {
+        let mapToken: Record<string, string> = {};
+        const listTokenString = cookie.split("; ");
+        listTokenString.forEach(item => {
+            const arr = item.split("=");
+            if(arr.length === 2) {
+                mapToken[arr[0]] = arr[1];
+            }
+        })
+        return mapToken;
+    }
+
+    async VerifyToken(token: string): Promise<TokenInfoResult> {
         try {
             const data = jwt.verify(token, this.privateKey) as Record<string, any>;
             return data as TokenInfoResult;

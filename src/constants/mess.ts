@@ -1,0 +1,1 @@
+export type TYPE_MESS = "box_chat" | "group_chat";

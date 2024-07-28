@@ -1,6 +1,7 @@
 export interface JwtInterface {
     CreateToken(payload: TokenInfoPayload, type: TokenType): string
     VerifyToken(token: string): Promise<TokenInfoResult | Error>
+    MapCookie(cookie: string): Record<string, string>
 }
 
 export type TokenType = "access_token" | "refresh_token";

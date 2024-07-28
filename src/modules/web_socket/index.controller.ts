@@ -10,19 +10,25 @@ import { Channel } from "amqplib/callback_api";
 import { QUEUE } from "@/constants/queue";
 import { FIELD_SOCKET } from "@/constants/websocket";
 import { MESS_FIELD_REQUIRE, MessModel } from "@/models/mess";
+import { JwtService } from "@/shared/jwt/index.service";
+import { TOKEN_TYPE } from "@/constants/token";
+import { TYPE_MESS } from "@/constants/mess";
 
 @Controller()
 export class WebSocketController implements WebSocketInterface {
     private wss: WebSocketServer;
     private mapWs: Map<string, WebSocket>;
+    private mapWsGroupChat: Map<number, WebSocket[]>;
     private userClientWsConnection: Map<string, { count: number, connections: WebSocket[] }>;
     private chanelRabbitMQ: Channel;
 
     constructor(
-        private readonly rabbitMQService: RabbitMQService
+        private readonly rabbitMQService: RabbitMQService,
+        private readonly jwtService: JwtService
     ) {
         this.wss = new WebSocketServer({ port: 8080 });
         this.mapWs = new Map();
+        this.mapWsGroupChat = new Map();
         this.userClientWsConnection = new Map();
 
         this.getServicePromise();
@@ -35,15 +41,32 @@ export class WebSocketController implements WebSocketInterface {
 
     private checkPayload(mess: MessModel): boolean {
         MESS_FIELD_REQUIRE.forEach(item => {
-            if(mess[item] === undefined) return false;
+            if (mess[item] === undefined) return false;
         })
         return true;
     }
 
     HandleConnect() {
         try {
-            this.wss.on("connection", (ws: WebSocket, req: IncomingMessage) => {
-                const key_ws = this.SetIdClient(ws, req);
+            this.wss.on("connection", async (ws: WebSocket, req: IncomingMessage) => {
+                if (!req.headers.cookie) {
+                    ws.close();
+                    return;
+                }
+                const mapToken = this.jwtService.MapCookie(req.headers.cookie);
+                const tokenInfoResult = await this.jwtService.VerifyToken(mapToken[TOKEN_TYPE.ACCESS_TOKEN]);
+
+                if (!tokenInfoResult.profile_id) {
+                    ws.close();
+                    throw new Error("token error");
+                }
+
+                const key_ws = this.SetIdClient(ws, tokenInfoResult.profile_id);
+
+                // Tìm các group_chat_ws join
+                // loop qua group_chat_ws: 
+                //      - mapWsGroupChat chưa có group_chat_id thì thêm vào
+                //      - có rồi thì push thêm ws vào
 
                 this.OnMess(ws);
                 this.HandleError(ws);
@@ -60,27 +83,16 @@ export class WebSocketController implements WebSocketInterface {
         });
     }
 
-    SetIdClient(ws: WebSocket, req: IncomingMessage): string | null {
+    SetIdClient(ws: WebSocket, profileId: number): string | null {
         try {
-            let mapParams = {};
-            let profileId = "";
             let key_ws = "";
+            const uuid = uuidv4();
+            key_ws = `${uuid}_${profileId}`;
 
-            req.url.split("?")[1].split("&").forEach(item => {
-                const [key, value] = item.split("=");
-                mapParams[key] = value;
-            });
-
-            if (mapParams["id"]) {
-                profileId = mapParams["id"];
-                const uuid = uuidv4();
-                key_ws = `${uuid}_${profileId}`;
-                
-                ws[FIELD_SOCKET.id] = profileId;
-                ws[FIELD_SOCKET.key_ws] = key_ws;
-                this.mapWs.set(key_ws, ws);
-                this.SetCountUserClient(profileId, "up", ws);
-            }
+            ws[FIELD_SOCKET.id] = profileId;
+            ws[FIELD_SOCKET.key_ws] = key_ws;
+            this.mapWs.set(key_ws, ws);
+            this.SetCountUserClient(`${profileId}`, "up", ws);
 
             return key_ws;
         } catch (error) {
@@ -126,17 +138,17 @@ export class WebSocketController implements WebSocketInterface {
 
     OnMess(ws: WebSocket) {
         ws.on("message", (data) => {
-            try {                
+            try {
                 const mess: MessModel = JSON.parse(data.toString());
-    
-                if(!this.checkPayload(mess) || ( !mess.box_chat_id && !mess.group_chat_id )) {
+
+                if (!this.checkPayload(mess) || (!mess.box_chat_id && !mess.group_chat_id)) {
                     ws.send(JSON.stringify({
                         error: new Error("wrong format")
                     }))
                     return;
                 }
-    
-    
+
+
                 const insertMess: MessModel = {
                     ...mess,
                     from_id: Number(ws[FIELD_SOCKET.id]),
@@ -145,13 +157,33 @@ export class WebSocketController implements WebSocketInterface {
                     updated_at: null,
                     deleted_at: null,
                 }
-    
+
                 const repData = JSON.stringify(insertMess);
-                ws.send(repData);
-                this.userClientWsConnection.get(`${insertMess.to_id}`).connections.forEach(item => {
-                    item.send(repData);
-                })
-    
+
+                let typeMess: TYPE_MESS = "box_chat";
+                if (insertMess.group_chat_id) {
+                    typeMess = "group_chat";
+                }
+
+                switch (typeMess) {
+                    case "box_chat":
+                        ws.send(repData);
+                        
+                        const toClient = this.userClientWsConnection.get(`${insertMess.to_id}`);
+                        if(toClient) {
+                            toClient.connections.forEach(item => {
+                                item.send(repData);
+                            })
+                        }
+                        break;
+                    case "group_chat":
+                        //  - lấy mapWsGroupChat.get(insertMess.group_chat_id)
+                        //  - loop qua rồi gửi tin nhắn
+                        break;
+                    default:
+                        break;
+                }
+
                 this.chanelRabbitMQ.sendToQueue(QUEUE.mess, Buffer.from(JSON.stringify(insertMess)), {
                     persistent: true,
                 });
