@@ -48,6 +48,8 @@ model profiles {
 
     from_box_chats box_chats[] @relation("from_profile")
     to_box_chats box_chats[] @relation("to_profile")
+    group_chats group_chats[]
+    profile_group_chat profile_group_chats[]
 
     created_at DateTime @default(now())
     updated_at DateTime? @updatedAt
@@ -68,4 +70,33 @@ model box_chats {
     deleted_at DateTime?
 
     @@unique([from_id, to_id])
+}
+
+model group_chats {
+    id Int @id @default(autoincrement())
+
+    create_id Int
+
+    profile profiles @relation(fields: [create_id], references: [id])
+    profile_group_chat profile_group_chats[]
+
+    created_at DateTime @default(now())
+    updated_at DateTime? @updatedAt
+    deleted_at DateTime?
+}
+
+model profile_group_chats {
+    id Int @id @default(autoincrement())
+
+    profile_id Int
+    group_chat_id Int
+
+    profile profiles @relation(fields: [profile_id], references: [id])
+    group_chat group_chats @relation(fields: [group_chat_id], references: [id])
+
+    created_at DateTime @default(now())
+    updated_at DateTime? @updatedAt
+    deleted_at DateTime?
+
+    @@unique([profile_id, group_chat_id])
 }
