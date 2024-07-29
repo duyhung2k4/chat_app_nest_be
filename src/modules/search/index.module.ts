@@ -10,6 +10,7 @@ import { JwtModule } from "@/shared/jwt/index.module";
     imports: [PgModule, HttpModule, JwtModule],
     controllers: [SearchController],
     providers: [SearchService],
+    exports: [SearchService],
 })
 export class SearchModule implements NestModule {
     public configure(consumer: MiddlewareConsumer) {

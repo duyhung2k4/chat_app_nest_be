@@ -11,6 +11,7 @@ import { MongodbModule } from "@/shared/mongodb/index.module";
     imports: [HttpModule, JwtModule, PgModule, MongodbModule],
     controllers: [MessController],
     providers: [MessService],
+    exports: [MessService],
 })
 export class MessModule implements NestModule {
     public configure(consumer: MiddlewareConsumer) {

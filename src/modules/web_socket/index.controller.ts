@@ -13,9 +13,11 @@ import { MESS_FIELD_REQUIRE, MessModel } from "@/models/mess";
 import { JwtService } from "@/shared/jwt/index.service";
 import { TOKEN_TYPE } from "@/constants/token";
 import { TYPE_MESS } from "@/constants/mess";
+import { MessService } from "../mess/index.service";
 
 @Controller()
 export class WebSocketController implements WebSocketInterface {
+    private initialized: Promise<void>
     private wss: WebSocketServer;
     private mapWs: Map<string, WebSocket>;
     private mapWsGroupChat: Map<number, WebSocket[]>;
@@ -24,7 +26,8 @@ export class WebSocketController implements WebSocketInterface {
 
     constructor(
         private readonly rabbitMQService: RabbitMQService,
-        private readonly jwtService: JwtService
+        private readonly jwtService: JwtService,
+        private readonly messService: MessService,
     ) {
         this.wss = new WebSocketServer({ port: 8080 });
         this.mapWs = new Map();
@@ -32,7 +35,7 @@ export class WebSocketController implements WebSocketInterface {
         this.userClientWsConnection = new Map();
 
         this.getServicePromise();
-        this.HandleConnect();
+        this.initialized = this.init();
     }
 
     private async getServicePromise() {
@@ -46,7 +49,7 @@ export class WebSocketController implements WebSocketInterface {
         return true;
     }
 
-    HandleConnect() {
+    private async init() {
         try {
             this.wss.on("connection", async (ws: WebSocket, req: IncomingMessage) => {
                 if (!req.headers.cookie) {
@@ -67,6 +70,16 @@ export class WebSocketController implements WebSocketInterface {
                 // loop qua group_chat_ws: 
                 //      - mapWsGroupChat chưa có group_chat_id thì thêm vào
                 //      - có rồi thì push thêm ws vào
+                const listGroupChat = await this.messService.GetGroupChat(tokenInfoResult.profile_id);
+                ws[FIELD_SOCKET.list_group_chat_id] = listGroupChat;
+                listGroupChat.forEach(item => {
+                    const groupChat = this.mapWsGroupChat.get(item.id);
+                    if(!groupChat) {
+                        this.mapWsGroupChat.set(item.id, [ws]);
+                    } else {
+                        this.mapWsGroupChat.set(item.id, [ws, ...groupChat]);
+                    }
+                })
 
                 this.OnMess(ws);
                 this.HandleError(ws);
@@ -105,6 +118,11 @@ export class WebSocketController implements WebSocketInterface {
             if (!key_ws || key_ws.split("_").length < 2) return;
 
             const profileId = key_ws.split("_")[1];
+
+            ws[FIELD_SOCKET.list_group_chat_id].forEach(item => {
+                const curGroup = this.mapWsGroupChat.get(item.id);
+                this.mapWsGroupChat.set(item.id, curGroup.filter(g => g[FIELD_SOCKET.key_ws] !== ws[FIELD_SOCKET.key_ws]));
+            })
 
             this.mapWs.delete(key_ws);
             this.SetCountUserClient(profileId, "down", ws);

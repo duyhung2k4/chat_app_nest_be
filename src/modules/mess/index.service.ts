@@ -125,6 +125,38 @@ export class MessService implements MessServiceInterface {
         }
     }
 
+    async GetBoxChat(profileId: number): Promise<BoxChatModel[]>{
+        try {
+            const queryConfig: QueryConfig = {
+                text: `
+                    SELECT * FROM box_chats WHERE from_id = $1 OR to_id = $1
+                `,
+                values: [profileId],
+            }
+
+            const result = await this.clientPg.query<BoxChatModel>(queryConfig);
+            return result.rows;
+        } catch (error) {
+            return error;
+        }
+    }
+
+    async GetGroupChat(profileId: number): Promise<ProfileGroupChatModel[]>{
+        try {
+            const queryConfig: QueryConfig = {
+                text: `
+                    SELECT * FROM profile_group_chats WHERE profile_id = $1 
+                `,
+                values: [profileId]
+            }
+
+            const result = await this.clientPg.query<ProfileGroupChatModel>(queryConfig);
+            return result.rows;
+        } catch (error) {
+            return error;
+        }
+    }
+
     async LoadMess(boxChatId: number): Promise<MessModel[]> {
         try {
             const listMess: MessModel[] = [];

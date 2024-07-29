@@ -13,6 +13,7 @@ import { AuthMiddleware } from "@/middlewares/auth.middleware";
     imports: [PgModule, RedisModule,SmtpModule, BcryptModule, JwtModule, HttpModule],
     controllers: [AuthController],
     providers: [AuthService],
+    exports: [AuthService],
 })
 export class AuthModule implements NestModule {
     public configure(consumer: MiddlewareConsumer) {
