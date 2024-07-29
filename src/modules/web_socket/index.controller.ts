@@ -14,6 +14,7 @@ import { JwtService } from "@/shared/jwt/index.service";
 import { TOKEN_TYPE } from "@/constants/token";
 import { TYPE_MESS } from "@/constants/mess";
 import { MessService } from "../mess/index.service";
+import { ProfileGroupChatModel } from "@/models/profile_group_chat";
 
 @Controller()
 export class WebSocketController implements WebSocketInterface {
@@ -73,11 +74,11 @@ export class WebSocketController implements WebSocketInterface {
                 const listGroupChat = await this.messService.GetGroupChat(tokenInfoResult.profile_id);
                 ws[FIELD_SOCKET.list_group_chat_id] = listGroupChat;
                 listGroupChat.forEach(item => {
-                    const groupChat = this.mapWsGroupChat.get(item.id);
+                    const groupChat = this.mapWsGroupChat.get(item.group_chat_id);
                     if(!groupChat) {
-                        this.mapWsGroupChat.set(item.id, [ws]);
+                        this.mapWsGroupChat.set(item.group_chat_id, [ws]);
                     } else {
-                        this.mapWsGroupChat.set(item.id, [ws, ...groupChat]);
+                        this.mapWsGroupChat.set(item.group_chat_id, [ws, ...groupChat]);
                     }
                 })
 
@@ -119,9 +120,9 @@ export class WebSocketController implements WebSocketInterface {
 
             const profileId = key_ws.split("_")[1];
 
-            ws[FIELD_SOCKET.list_group_chat_id].forEach(item => {
-                const curGroup = this.mapWsGroupChat.get(item.id);
-                this.mapWsGroupChat.set(item.id, curGroup.filter(g => g[FIELD_SOCKET.key_ws] !== ws[FIELD_SOCKET.key_ws]));
+            (ws[FIELD_SOCKET.list_group_chat_id] as ProfileGroupChatModel[] ).forEach(item => {
+                const curGroup = this.mapWsGroupChat.get(item.group_chat_id);
+                this.mapWsGroupChat.set(item.group_chat_id, curGroup.filter(g => g[FIELD_SOCKET.key_ws] !== ws[FIELD_SOCKET.key_ws]));
             })
 
             this.mapWs.delete(key_ws);
@@ -197,6 +198,13 @@ export class WebSocketController implements WebSocketInterface {
                     case "group_chat":
                         //  - lấy mapWsGroupChat.get(insertMess.group_chat_id)
                         //  - loop qua rồi gửi tin nhắn
+                        const listWS = this.mapWsGroupChat.get(insertMess.group_chat_id);
+                        if(listWS) {
+                            listWS.forEach(item => {
+                                item.send(repData);
+                            });
+                        }
+
                         break;
                     default:
                         break;
