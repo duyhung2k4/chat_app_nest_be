@@ -5,6 +5,8 @@ import { HttpService } from "@/shared/http/index.service";
 import { AddMemberGroupChatReq, CreateBoxChatReq, CreateGroupChatReq } from "@/dto/request/mess";
 import { MessControllerInterface } from "./index.interface";
 import { JwtService } from "@/shared/jwt/index.service";
+import { BoxChatModel } from "@/models/box_chat";
+import { ProfileGroupChatModel } from "@/models/profile_group_chat";
 
 @Controller("mess/api/v1")
 export class MessController implements MessControllerInterface {
@@ -79,6 +81,30 @@ export class MessController implements MessControllerInterface {
             
             const result = await this.messService.LoadMess(Number(id));
 
+            this.httpService.SuccessResponse(res, result);
+        } catch (error) {
+            this.httpService.ErrorResponse(res, error);
+        }
+    }
+
+    @Get("protected/box_chat")
+    async GetBoxChat(@Req() req: Request, @Res() res: Response): Promise<void> {
+        try {
+            const { profile_id } = this.jwtService.GetTokenResut(req.headers.authorization);
+            const result: BoxChatModel[] = await this.messService.GetBoxChat(profile_id);
+            
+            this.httpService.SuccessResponse(res, result);
+        } catch (error) {
+            this.httpService.ErrorResponse(res, error);
+        }
+    }
+
+    @Get("protected/profile_group_chat")
+    async GetProfileGroupChat(@Req() req: Request, @Res() res: Response): Promise<void> {
+        try {
+            const { profile_id } = this.jwtService.GetTokenResut(req.headers.authorization);
+            const result: ProfileGroupChatModel[] = await this.messService.GetProfileGroupChat(profile_id);
+            
             this.httpService.SuccessResponse(res, result);
         } catch (error) {
             this.httpService.ErrorResponse(res, error);

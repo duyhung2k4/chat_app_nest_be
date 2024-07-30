@@ -2,6 +2,7 @@ import * as jwt from "jsonwebtoken";
 import * as fs from "fs";
 import { Injectable } from "@nestjs/common";
 import { JwtInterface, TokenInfoPayload, TokenInfoResult, TokenType } from "./index.interface";
+import { TOKEN_TYPE } from "@/constants/token";
 
 @Injectable()
 export class JwtService implements JwtInterface {
@@ -39,5 +40,20 @@ export class JwtService implements JwtInterface {
         } catch (error) {
             return error;
         }
+    }
+
+    GetTokenResut(bearerToken: string | undefined): TokenInfoResult {
+        try {
+            const token = bearerToken.split(" ")?.[1];
+            if(!token) {
+                throw new Error("token error");
+            }
+
+            const tokenInfoResult = jwt.verify(token, this.privateKey) as TokenInfoResult;
+            
+            return tokenInfoResult;
+        } catch (error) {
+            return error;
+        }    
     }
 }

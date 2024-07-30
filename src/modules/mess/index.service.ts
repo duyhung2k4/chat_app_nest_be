@@ -10,6 +10,7 @@ import { MongodbService } from "@/shared/mongodb/index.service";
 import { COLLECTION } from "@/constants/collection";
 import { GroupChatModel } from "@/models/group_chat";
 import { ProfileGroupChatModel } from "@/models/profile_group_chat";
+import { COLUMN_TABLE } from "@/constants/table";
 
 @Injectable()
 export class MessService implements MessServiceInterface {
@@ -141,17 +142,47 @@ export class MessService implements MessServiceInterface {
         }
     }
 
-    async GetGroupChat(profileId: number): Promise<ProfileGroupChatModel[]>{
+    async GetProfileGroupChat(profileId: number): Promise<ProfileGroupChatModel[]>{
         try {
+            let profileGroupChats: ProfileGroupChatModel[] = [];
+            
             const queryConfig: QueryConfig = {
                 text: `
-                    SELECT * FROM profile_group_chats WHERE profile_id = $1 
+                    SELECT 
+                        ${COLUMN_TABLE.profile_group_chats.map(c => `pg.${c} as pg__${c}`).join(",")},
+                        ${COLUMN_TABLE.group_chats.map(c => `g.${c} as g__${c}`).join(",")}
+                    FROM profile_group_chats as pg
+                    JOIN group_chats as g ON g.id = pg.group_chat_id
+                    WHERE pg.profile_id = $1 
                 `,
                 values: [profileId]
             }
 
-            const result = await this.clientPg.query<ProfileGroupChatModel>(queryConfig);
-            return result.rows;
+            const result = await this.clientPg.query<Record<string, any>>(queryConfig);
+            
+            result.rows.forEach(item => {
+                const profileGroupChat = {
+                    group_chat: {}
+                };
+
+                Object.keys(item).forEach(key => {
+                    const [tagField, field] = key.split("__");
+                    switch (tagField) {
+                        case "pg":
+                            profileGroupChat[field] = item[key];
+                            break;
+                        case "g":
+                            profileGroupChat.group_chat[field] = item[key];
+                            break;
+                        default:
+                            break;
+                    }
+                })
+                
+                profileGroupChats.push(profileGroupChat as ProfileGroupChatModel);
+            })
+            
+            return profileGroupChats;
         } catch (error) {
             return error;
         }

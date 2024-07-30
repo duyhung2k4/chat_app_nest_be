@@ -15,6 +15,7 @@ import { TOKEN_TYPE } from "@/constants/token";
 import { TYPE_MESS } from "@/constants/mess";
 import { MessService } from "../mess/index.service";
 import { ProfileGroupChatModel } from "@/models/profile_group_chat";
+import { TokenInfoResult } from "@/shared/jwt/index.interface";
 
 @Controller()
 export class WebSocketController implements WebSocketInterface {
@@ -50,37 +51,35 @@ export class WebSocketController implements WebSocketInterface {
         return true;
     }
 
-    private async init() {
+    private async getTokenResult( ws: WebSocket, req: IncomingMessage): Promise<TokenInfoResult | null> {
+        try {            
+            if (!req.headers.cookie) {
+                ws.close();
+                throw null;
+            }
+            const mapToken = this.jwtService.MapCookie(req.headers.cookie);
+            const tokenInfoResult = await this.jwtService.VerifyToken(mapToken[TOKEN_TYPE.ACCESS_TOKEN]);
+            if (!tokenInfoResult.profile_id) {
+                ws.close();
+                throw null;
+            }
+            return tokenInfoResult;
+        } catch (error) {
+            return error;
+        }
+    }
+
+    private async init(): Promise<void> {
         try {
             this.wss.on("connection", async (ws: WebSocket, req: IncomingMessage) => {
-                if (!req.headers.cookie) {
+                const tokenInfoResult = await this.getTokenResult(ws, req);
+                if(!tokenInfoResult) {
                     ws.close();
                     return;
                 }
-                const mapToken = this.jwtService.MapCookie(req.headers.cookie);
-                const tokenInfoResult = await this.jwtService.VerifyToken(mapToken[TOKEN_TYPE.ACCESS_TOKEN]);
-
-                if (!tokenInfoResult.profile_id) {
-                    ws.close();
-                    throw new Error("token error");
-                }
-
                 const key_ws = this.SetIdClient(ws, tokenInfoResult.profile_id);
-
-                // Tìm các group_chat_ws join
-                // loop qua group_chat_ws: 
-                //      - mapWsGroupChat chưa có group_chat_id thì thêm vào
-                //      - có rồi thì push thêm ws vào
-                const listGroupChat = await this.messService.GetGroupChat(tokenInfoResult.profile_id);
-                ws[FIELD_SOCKET.list_group_chat_id] = listGroupChat;
-                listGroupChat.forEach(item => {
-                    const groupChat = this.mapWsGroupChat.get(item.group_chat_id);
-                    if(!groupChat) {
-                        this.mapWsGroupChat.set(item.group_chat_id, [ws]);
-                    } else {
-                        this.mapWsGroupChat.set(item.group_chat_id, [ws, ...groupChat]);
-                    }
-                })
+                
+                await this.SetGroupChat(ws, tokenInfoResult);
 
                 this.OnMess(ws);
                 this.HandleError(ws);
@@ -90,11 +89,32 @@ export class WebSocketController implements WebSocketInterface {
             console.log(error);
         }
     }
-
+    
     HandleError(ws: WebSocket) {
         ws.on("error", (err) => {
             console.log(err);
         });
+    }
+    
+    async SetGroupChat(ws: WebSocket, tokenInfoResult: TokenInfoResult): Promise<void> {
+        try {
+            // Tìm các group_chat_ws join
+            // loop qua group_chat_ws: 
+            //      - mapWsGroupChat chưa có group_chat_id thì thêm vào
+            //      - có rồi thì push thêm ws vào
+            const listGroupChat = await this.messService.GetProfileGroupChat(tokenInfoResult.profile_id);
+            ws[FIELD_SOCKET.list_group_chat_id] = listGroupChat;
+            listGroupChat.forEach(item => {
+                const groupChat = this.mapWsGroupChat.get(item.group_chat_id);
+                if (!groupChat) {
+                    this.mapWsGroupChat.set(item.group_chat_id, [ws]);
+                } else {
+                    this.mapWsGroupChat.set(item.group_chat_id, [ws, ...groupChat]);
+                }
+            });
+        } catch (error) {
+            return error;
+        }
     }
 
     SetIdClient(ws: WebSocket, profileId: number): string | null {
@@ -160,7 +180,11 @@ export class WebSocketController implements WebSocketInterface {
             try {
                 const mess: MessModel = JSON.parse(data.toString());
 
-                if (!this.checkPayload(mess) || (!mess.box_chat_id && !mess.group_chat_id)) {
+                if (
+                    !this.checkPayload(mess) || 
+                    (!mess.box_chat_id && !mess.group_chat_id) ||
+                    (mess.box_chat_id && mess.group_chat_id)
+                ) {
                     ws.send(JSON.stringify({
                         error: new Error("wrong format")
                     }))
@@ -204,7 +228,6 @@ export class WebSocketController implements WebSocketInterface {
                                 item.send(repData);
                             });
                         }
-
                         break;
                     default:
                         break;
