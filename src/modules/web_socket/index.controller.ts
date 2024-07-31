@@ -122,7 +122,7 @@ export class WebSocketController implements WebSocketInterface {
             let key_ws = "";
             const uuid = uuidv4();
             key_ws = `${uuid}_${profileId}`;
-
+            
             ws[FIELD_SOCKET.id] = profileId;
             ws[FIELD_SOCKET.key_ws] = key_ws;
             this.mapWs.set(key_ws, ws);
