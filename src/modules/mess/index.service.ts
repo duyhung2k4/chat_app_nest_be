@@ -128,15 +128,50 @@ export class MessService implements MessServiceInterface {
 
     async GetBoxChat(profileId: number): Promise<BoxChatModel[]>{
         try {
+            let listBoxChat: BoxChatModel[] = [];
+            
             const queryConfig: QueryConfig = {
                 text: `
-                    SELECT * FROM box_chats WHERE from_id = $1 OR to_id = $1
+                    SELECT
+                        ${COLUMN_TABLE.box_chats.map(c => `b.${c} as b__${c}`).join(",")},
+                        ${COLUMN_TABLE.profiles.map(c => `f.${c} as f__${c}`).join(",")},
+                        ${COLUMN_TABLE.profiles.map(c => `t.${c} as t__${c}`).join(",")}
+                    FROM box_chats as b 
+                    JOIN profiles as f ON f.id = b.from_id
+                    JOIN profiles as t ON t.id = b.to_id
+                    WHERE from_id = $1 OR to_id = $1
                 `,
                 values: [profileId],
             }
 
             const result = await this.clientPg.query<BoxChatModel>(queryConfig);
-            return result.rows;
+            result.rows.forEach(item => {
+                let boxChat = {
+                    from_profile: {},
+                    to_profile: {},
+                }
+
+
+                Object.keys(item).forEach(key => {
+                    const [tagField, field] = key.split("__");
+                    switch (tagField) {
+                        case "b":
+                            boxChat[field] = item[key];
+                            break;
+                        case "f":
+                            boxChat.from_profile[field] = item[key];
+                            break;
+                        case "t":
+                            boxChat.to_profile[field] = item[key];
+                            break;
+                        default:
+                            break;
+                    }
+                });
+
+                listBoxChat.push(boxChat as BoxChatModel);
+            })
+            return listBoxChat;
         } catch (error) {
             return error;
         }
