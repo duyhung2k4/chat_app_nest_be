@@ -71,15 +71,15 @@ export class MessController implements MessControllerInterface {
         }
     }
 
-    @Get("protected/box_chat_load_mess")
+    @Get("protected/load_mess")
     async LoadMess(@Req() req: Request, @Res() res: Response) {
         try {
-            const { id } = req.query as { id: string };
+            const { id, type_mess } = req.query as { id: string, type_mess: "box_chat" | "group_chat" };
             if(!id) {
                 throw new Error("id null");
             }
             
-            const result = await this.messService.LoadMess(Number(id));
+            const result = await this.messService.LoadMess(Number(id), type_mess);
 
             this.httpService.SuccessResponse(res, result);
         } catch (error) {

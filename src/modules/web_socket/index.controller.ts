@@ -98,7 +98,7 @@ export class WebSocketController implements WebSocketInterface {
 
         if (
             !this.checkPayload(mess) ||
-            (!mess.box_chat_id && !mess.group_chat_id) ||
+            (!mess.box_chat_id) ||
             (mess.box_chat_id && mess.group_chat_id)
         ) {
             ws.send(JSON.stringify({
@@ -138,7 +138,7 @@ export class WebSocketController implements WebSocketInterface {
 
         if (
             !this.checkPayload(mess) ||
-            (!mess.box_chat_id && !mess.group_chat_id) ||
+            (!mess.group_chat_id) ||
             (mess.box_chat_id && mess.group_chat_id)
         ) {
             ws.send(JSON.stringify({
@@ -168,7 +168,40 @@ export class WebSocketController implements WebSocketInterface {
             persistent: true,
         });
     }
+    
+    private async createGroupChat(ws: WebSocket, payload: TypeOnMess) {
+        try {
+            const groupChat = payload.data as { id: number };
+            const profileId = Number(ws[FIELD_SOCKET.id]);
+    
+            const listUserClientConnection = this.userClientWsConnection.get(profileId).connections;
+            this.mapWsGroupChat.set(groupChat.id, listUserClientConnection);
+    
+            const listGroupChat = await this.messService.GetProfileGroupChat(profileId);
+            listUserClientConnection.forEach(c => {
+                c[FIELD_SOCKET.list_group_chat_id] = listGroupChat;
+            });
+        } catch (error) {
+            ws.send(JSON.stringify({ error }));
+        }
+    }
 
+    private async addMemberGroupChat(ws: WebSocket, payload: TypeOnMess) {
+        try {
+            const profileGroupChat: ProfileGroupChatModel = payload.data as ProfileGroupChatModel;
+
+            const memberClientConnections = this.userClientWsConnection.get(profileGroupChat.profile_id).connections;
+            const curListWs = this.mapWsGroupChat.get(profileGroupChat.group_chat_id);
+            this.mapWsGroupChat.set(profileGroupChat.group_chat_id, [...curListWs, ...memberClientConnections]);
+
+            const listGroupChat = await this.messService.GetProfileGroupChat(profileGroupChat.profile_id);
+            memberClientConnections.forEach(c => {
+                c[FIELD_SOCKET.list_group_chat_id] = listGroupChat;
+            });
+        } catch (error) {
+            ws.send(JSON.stringify({ error }));
+        }
+    }
 
 
 
@@ -261,7 +294,7 @@ export class WebSocketController implements WebSocketInterface {
     }
 
     OnMess(ws: WebSocket) {
-        ws.on("message", (data) => {
+        ws.on("message", async (data) => {
             try {
                 const payload: TypeOnMess = JSON.parse(data.toString());
 
@@ -271,6 +304,12 @@ export class WebSocketController implements WebSocketInterface {
                         break;
                     case "group_chat":
                         this.sendMessGroupChat(ws, payload);
+                        break;
+                    case "create_group_chat":
+                        await this.createGroupChat(ws, payload);
+                        break;
+                    case "add_member":
+                        await this.addMemberGroupChat(ws, payload);
                         break;
                     default:
                         break;

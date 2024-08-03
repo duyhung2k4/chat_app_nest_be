@@ -19,7 +19,7 @@ export interface MessServiceInterface {
     CreateGroupChat(payload: CreateGroupChatReq): Promise<GroupChatModel>
     AddMemberGroupChat(payload: AddMemberGroupChatReq): Promise<ProfileGroupChatModel>
     InGroupChat(profileId: number, groupChatId: number): Promise<boolean>
-    LoadMess(boxChatId: number): Promise<MessModel[]>
+    LoadMess(boxChatId: number, type_mess: "box_chat" | "group_chat"): Promise<MessModel[]>
     GetBoxChat(profileId: number): Promise<BoxChatModel[]>
     GetProfileGroupChat(profileId: number): Promise<ProfileGroupChatModel[]>
 }

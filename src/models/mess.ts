@@ -3,7 +3,7 @@ import { BaseModel } from "./base";
 export type MessModel = {
     _id: number
     from_id: number
-    to_id: number
+    to_id: number | null
     box_chat_id: number | null
     group_chat_id: number | null
     mess_rep_id: string | null // get from uuid

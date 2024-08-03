@@ -5,7 +5,7 @@ import { Injectable } from "@nestjs/common";
 import { Client, QueryConfig } from "pg";
 import { MessServiceInterface } from "./index.interface";
 import { MessModel } from "@/models/mess";
-import { Db } from "mongodb";
+import { Db, Filter, FindOptions } from "mongodb";
 import { MongodbService } from "@/shared/mongodb/index.service";
 import { COLLECTION } from "@/constants/collection";
 import { GroupChatModel } from "@/models/group_chat";
@@ -223,12 +223,24 @@ export class MessService implements MessServiceInterface {
         }
     }
 
-    async LoadMess(boxChatId: number): Promise<MessModel[]> {
+    async LoadMess(id: number, type_mess: "box_chat" | "group_chat"): Promise<MessModel[]> {
         try {
             const listMess: MessModel[] = [];
-            const result = this.clientMongo.collection(COLLECTION.MESS).find<MessModel>({
-                box_chat_id: boxChatId,
-            })
+
+            let filter: Filter<Document> = {};
+            
+            switch (type_mess) {
+                case "box_chat":
+                    filter.box_chat_id = id;
+                    break;
+                case "group_chat":
+                    filter.group_chat_id = id;
+                    break;
+                default:
+                    throw new Error("agrs error");
+            }
+
+            const result = this.clientMongo.collection(COLLECTION.MESS).find<MessModel>(filter);
 
             for await (const doc of result) {
                 listMess.push(doc);
