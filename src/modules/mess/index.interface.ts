@@ -12,6 +12,7 @@ export interface MessControllerInterface {
     LoadMess(req: Request, res: Response): Promise<void>
     GetBoxChat(req: Request, res: Response) : Promise<void>
     GetProfileGroupChat(req: Request, res: Response) : Promise<void>
+    GetMemberGroupChat(req: Request, res: Response) : Promise<void>
 }
 
 export interface MessServiceInterface {
@@ -22,4 +23,5 @@ export interface MessServiceInterface {
     LoadMess(boxChatId: number, type_mess: "box_chat" | "group_chat"): Promise<MessModel[]>
     GetBoxChat(profileId: number): Promise<BoxChatModel[]>
     GetProfileGroupChat(profileId: number): Promise<ProfileGroupChatModel[]>
+    GetMemberGroupChat(id: number): Promise<ProfileGroupChatModel[]>
 }

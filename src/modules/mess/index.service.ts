@@ -251,4 +251,22 @@ export class MessService implements MessServiceInterface {
             return error;
         }
     }
+
+    async GetMemberGroupChat(id: number): Promise<ProfileGroupChatModel[]> {
+        try {
+            const queryConfig: QueryConfig = {
+                text: `
+                    SELECT * FROM
+                    profile_group_chats
+                    WHERE group_chat_id = $1
+                `,
+                values: [id]
+            };
+
+            const result = await this.clientPg.query<ProfileGroupChatModel>(queryConfig);
+            return result.rows || [];
+        } catch (error) {
+            return error;
+        }
+    }
 }

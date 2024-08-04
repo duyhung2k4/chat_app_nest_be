@@ -32,11 +32,8 @@ export class SearchService implements SearchServiceInterface {
             }
 
             const result = await this.pgClient.query<ProfileModel>(queryConfig);
-            if(result.rowCount === 0) {
-                throw new Error("data null");
-            }
 
-            return result.rows;
+            return result.rows || [];
         } catch (error) {
             return error;
         }

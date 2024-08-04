@@ -110,4 +110,16 @@ export class MessController implements MessControllerInterface {
             this.httpService.ErrorResponse(res, error);
         }
     }
+
+    @Get("protected/member_group_chat")
+    async GetMemberGroupChat(@Req() req: Request, @Res() res: Response): Promise<void> {
+        try {
+            const { id } = req.query as { id: string };
+            const result: ProfileGroupChatModel[] = await this.messService.GetMemberGroupChat(Number(id));
+            
+            this.httpService.SuccessResponse(res, result);
+        } catch (error) {
+            this.httpService.ErrorResponse(res, error);
+        }
+    }
 }

@@ -22,9 +22,9 @@ import { TokenInfoResult } from "@/shared/jwt/index.interface";
 export class WebSocketController implements WebSocketInterface {
     private initialized: Promise<void>
     private wss: WebSocketServer;
-    private mapWs: Map<string, WebSocket>;
-    private mapWsGroupChat: Map<number, WebSocket[]>;
-    private userClientWsConnection: Map<number, { count: number, connections: WebSocket[] }>;
+    private mapWs: Map<string, WebSocket>;// Lưu ws của server
+    private mapWsGroupChat: Map<number, WebSocket[]>; // lưu ws của từng group chat
+    private userClientWsConnection: Map<number, { count: number, connections: WebSocket[] }>; // lưu ws của từng người - trường hợp 1 profile_id tạo nhiều kết nối
     private chanelRabbitMQ: Channel;
 
     constructor(
@@ -195,8 +195,10 @@ export class WebSocketController implements WebSocketInterface {
             this.mapWsGroupChat.set(profileGroupChat.group_chat_id, [...curListWs, ...memberClientConnections]);
 
             const listGroupChat = await this.messService.GetProfileGroupChat(profileGroupChat.profile_id);
+
             memberClientConnections.forEach(c => {
                 c[FIELD_SOCKET.list_group_chat_id] = listGroupChat;
+                c.send(JSON.stringify("add_member"));
             });
         } catch (error) {
             ws.send(JSON.stringify({ error }));
